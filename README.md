@@ -1,4 +1,8 @@
-## MSTD
+## Multi-Scale Semantic-Texture Detector(MSTD)
+### 架构图v1.0
+
+![alt text](data/module.png)
+
 ### 模块
 
 2025年3月28日 第一次提交
@@ -30,29 +34,61 @@ MSTD主要创新点在于：
 
 ```
 mstd/
-├── config.py             # 配置参数
-├── main.py               # 主入口文件
-├── train.py              # 训练脚本
-├── evaluate.py           # 评估脚本
-├── models/
-│   ├── __init__.py
+├── main.py               # 主入口文件，包含训练和评估功能
+├── inference.py          # 单张图像推理脚本
+├── models/               # 模型定义目录
+│   ├── __init__.py       # 模型包初始化
 │   ├── mstd.py           # MSTD主模型定义
-│   ├── patch_module.py   # Patch操作相关模块
-│   ├── texture_module.py # 纹理分析模块
-│   └── fusion_module.py  # 特征融合模块
-├── utils/
-│   ├── __init__.py
-│   ├── losses.py         # 损失函数定义
-│   ├── metrics.py        # 评估指标
-│   └── adversarial.py    # 对抗训练工具
-└── datasets/
-    ├── __init__.py
-    ├── dataloader.py     # 数据加载器
-    └── augmentation.py   # 数据增强方法
+│   ├── patch_operations.py  # 图像patch操作相关模块
+│   ├── dct_transform.py  # DCT变换实现
+│   ├── frequency_analysis.py # 频率分析模块
+│   └── srm_filter_kernel.py # 噪声残差滤波器实现
+├── utils/                # 工具函数目录
+│   ├── dataset.py        # 数据集加载器
+│   ├── metrics.py        # 评估指标计算
+│   ├── logging.py        # 日志记录工具
+│   └── augmentation.py   # 数据增强方法
+├── data/                 # 数据集和资源
+│   ├── datasets/         # 数据集存放目录
+│   └── module.png        # 架构图
+└── output/               # 输出结果和模型保存目录
 ```
 
-### 架构图v1.0
+### 框架流程
 
+MSTD是一个多分支融合的AI生成图像检测框架，主要由以下几个部分组成：
 
+1. **图像分块(Smash & Patches)**：
+   - 使用滑动窗口方法从输入图像中提取固定大小的patches
+   - 采用自适应步长策略以获取更多样的纹理信息
 
-![alt text](data/module.png)
+2. **频率域处理**：
+   - **DCT变换**：将图像patches转换到频率域
+   - **高/低频特征提取**：分别选取具有丰富高频和低频信息的patches
+   - **SRM滤波**：使用噪声残差模型提取可能的伪造痕迹
+   - **ResNet特征提取**：通过简化版ResNet50提取深层特征
+
+3. **语义特征提取**：
+   - **Patch随机打乱**：随机重排patches以减少内容偏见
+   - **CLIP编码**：使用类CLIP视觉编码器提取语义特征
+
+4. **特征融合与分类**：
+   - 融合高频特征、低频特征和语义特征
+   - 通过MLP输出二分类结果（真实/AI生成）
+
+### 使用流程
+
+1. **训练模式**：
+   ```bash
+   python main.py --mode train --data_root ./data --batch_size 32 --epochs 50
+   ```
+
+2. **评估模式**：
+   ```bash
+   python main.py --mode eval --resume ./output/best_model.pth
+   ```
+
+3. **推理模式**：
+   ```bash
+   python inference.py --image ./data/test.jpg --model ./output/best_model.pth
+   ```
