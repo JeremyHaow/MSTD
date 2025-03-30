@@ -1,0 +1,4 @@
+2025-03-30 18:20:50,728 - PAID - INFO - Arguments: Namespace(mode='train', data_root='./data/datasets/AttGAN', save_dir='./output/PAID_20250330_182050', resume=None, seed=42, gpu='0', batch_size=8, num_workers=4, image_size=256, patch_size=32, stride=16, num_high_freq_patches=9, num_low_freq_patches=9, feature_dim=256, epochs=50, lr=0.001, weight_decay=0.0001, lr_scheduler='cosine', lr_step_size=10, lr_gamma=0.1, warmup_epochs=5, print_freq=10, save_freq=5, eval_freq=1)
+2025-03-30 18:20:50,728 - PAID - INFO - Using device: cuda
+2025-03-30 18:20:50,740 - PAID - INFO - Training dataset size: 3192
+2025-03-30 18:20:50,740 - PAID - INFO - Validation dataset size: 160
