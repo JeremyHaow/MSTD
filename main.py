@@ -26,7 +26,7 @@ from utils.logging import setup_logger, save_checkpoint, log_metrics
 
 def parse_args():
     """命令行参数解析"""
-    parser = argparse.ArgumentParser(description='PAID模型训练与评估')
+    parser = argparse.ArgumentParser(description='MSTD: Multi-Scale Semantic-Texture Detector')
     
     # 基本参数
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'eval', 'inference'],
@@ -55,12 +55,16 @@ def parse_args():
                         help='图像patch大小')
     parser.add_argument('--stride', type=int, default=16,
                         help='图像patch提取步长')
-    parser.add_argument('--num_high_freq_patches', type=int, default=9,
-                        help='高频patch数量')
-    parser.add_argument('--num_low_freq_patches', type=int, default=9,
-                        help='低频patch数量')
+    parser.add_argument('--patch_grid_size', type=int, default=3,
+                        help='重组的图片大小 (NxN, 如3x3, 4x4等)')
+    parser.add_argument('--num_views', type=int, default=10,
+                        help='CLIP分支的随机视图数量')
     parser.add_argument('--feature_dim', type=int, default=256,
                         help='特征维度')
+    parser.add_argument('--use_pretrained', type=bool, default=True,
+                        help='是否使用预训练的视觉模型')
+    parser.add_argument('--freeze_backbone', type=bool, default=True,
+                        help='是否冻结预训练的视觉骨干网络参数')
     
     # 训练参数
     parser.add_argument('--epochs', type=int, default=50,
@@ -159,10 +163,22 @@ def build_model(args):
     model = MSTD(
         patch_size=args.patch_size,
         stride=args.stride,
-        num_high_freq_patches=args.num_high_freq_patches,
-        num_low_freq_patches=args.num_low_freq_patches,
+        patch_grid_size=args.patch_grid_size,
+        num_views=args.num_views,
         feature_dim=args.feature_dim
     )
+    
+    # 如果指定了冻结骨干网络
+    if args.freeze_backbone:
+        # 冻结ResNet部分
+        for module in [model.high_freq_branch.resnet, model.low_freq_branch.resnet]:
+            for param in module.parameters():
+                param.requires_grad = False
+        
+        # 取消冻结最后的全连接层
+        for module in [model.high_freq_branch.resnet.fc, model.low_freq_branch.resnet.fc]:
+            for param in module.parameters():
+                param.requires_grad = True
     
     return model
 
